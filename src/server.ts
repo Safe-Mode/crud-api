@@ -3,7 +3,7 @@ import { v4 as uuidv4, validate } from 'uuid';
 
 import type { User } from './types';
 import { ContentTypeEnum, EventEnum, HeaderEnum, MessageEnum, MethodEnum, StatusCodeEnum } from './enums';
-import { API_PORT, API_ENDPOINT, USER_ID_INDEX } from './const';
+import { API_PORT, API_ENDPOINT, USER_ID_INDEX, NOT_FOUND_INDEX } from './const';
 
 const users: User[] = [];
 
@@ -121,6 +121,21 @@ createServer((request: IncomingMessage, response: ServerResponse) => {
                         }
 
                         break;
+                    }
+                    case MethodEnum.DELETE: {
+                        if (!userId || !validate(userId)) {
+                            result = MessageEnum.INVALID_UUID;
+                            response.statusCode = StatusCodeEnum.BAD_REQUEST;
+                        } else {
+                            const userIndex = users.findIndex((user) => (user.id === userId));
+                            const hasUserFound = userIndex !== NOT_FOUND_INDEX;
+
+                            if (hasUserFound) {
+                                users.splice(userIndex, 1);
+                            }
+
+                            response.statusCode = hasUserFound ? StatusCodeEnum.NO_CONTENT_SUCCESS : StatusCodeEnum.BAD_REQUEST;
+                        }
                     }
                 }
             })
