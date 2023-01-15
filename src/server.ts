@@ -12,13 +12,13 @@ const endResponse = (response: ServerResponse, statusCode: StatusCodeEnum): void
     response.end();
 };
 
+const getJSONBody = (body: Buffer[]) => {
+    return JSON.parse(Buffer.concat(body).toString());
+};
+
 createServer((request: IncomingMessage, response: ServerResponse) => {
     const { method, url, headers } = request;
     let result: User | User[] | string;
-
-    if (headers['content-type'] !== ContentTypeEnum.APP_JSON) {
-        endResponse(response, StatusCodeEnum.BAD_REQUEST);
-    }
 
     request.on(EventEnum.ERROR, ({ stack }: Error) => {
         console.error(stack);
@@ -30,6 +30,12 @@ createServer((request: IncomingMessage, response: ServerResponse) => {
         endResponse(response, StatusCodeEnum.SERVER_ERROR);
     });
 
+    response.setHeader(HeaderEnum.CONTENT_TYPE, ContentTypeEnum.APP_JSON);
+
+    if (headers['content-type'] !== ContentTypeEnum.APP_JSON) {
+        endResponse(response, StatusCodeEnum.BAD_REQUEST);
+    }
+
     if (url?.startsWith(API_ENDPOINT)) {
         const body: any[] = [];
         
@@ -38,7 +44,7 @@ createServer((request: IncomingMessage, response: ServerResponse) => {
                 const userId = url.split('/')[USER_ID_INDEX];
 
                 switch (method) {
-                    case MethodEnum.GET:
+                    case MethodEnum.GET: {
                         if (userId && validate(userId)) {
                             const user = users.find((user) => (user.id === userId));
         
@@ -58,9 +64,10 @@ createServer((request: IncomingMessage, response: ServerResponse) => {
                         }
         
                         break;
-                    case MethodEnum.POST:
+                    }
+                    case MethodEnum.POST: {
                         body.push(chunk);
-                        const { username, age, hobbies }: User = JSON.parse(Buffer.concat(body).toString());
+                        const { username, age, hobbies }: User = getJSONBody(body);
                         
                         if (typeof username !== 'string'
                             || typeof age !== 'number'
@@ -82,11 +89,43 @@ createServer((request: IncomingMessage, response: ServerResponse) => {
                         }
                         
                         break;
+                    }
+                    case MethodEnum.PUT: {
+                        body.push(chunk);
+                        const { username, age, hobbies }: User = getJSONBody(body);
+
+                        if (!userId || !validate(userId)) {
+                            result = MessageEnum.INVALID_UUID;
+                            response.statusCode = StatusCodeEnum.BAD_REQUEST;
+                        } else {
+                            let userIndex = null;
+
+                            const user = users.find((user, index) => {
+                                const hasUserFound = user.id === userId;
+                                userIndex = hasUserFound ? index : null;
+                                return hasUserFound;
+                            });
+
+                            result = user ? {
+                                id: user.id,
+                                username: username ?? user.username,
+                                age: age ?? user.age,
+                                hobbies: hobbies ?? user.hobbies
+                            } : MessageEnum.USER_NOT_FOUND;
+
+                            if (typeof userIndex === 'number') {
+                                users[userIndex] = result as User;
+                            }
+
+                            response.statusCode = user ? StatusCodeEnum.SUCCESS : StatusCodeEnum.NOT_FOUND;
+                        }
+
+                        break;
+                    }
                 }
             })
             .on(EventEnum.END, () => {
-                response.setHeader(HeaderEnum.CONTENT_TYPE, ContentTypeEnum.APP_JSON);
-                response.end(JSON.stringify({ headers, method, url, result }));
+                response.end(JSON.stringify({ headers, method, url, body: result }));
             });
     } else {
         endResponse(response, StatusCodeEnum.NOT_FOUND);
