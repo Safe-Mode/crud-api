@@ -2,10 +2,10 @@
   "name": "crud-api",
   "version": "1.0.0",
   "description": "Simple CRUD API",
-  "main": "src/server.ts",
+  "main": "src/index.ts",
   "type": "module",
   "scripts": {
-    "start:dev": "nodemon --experimentalSpecifierResolution=node --esm src/server.ts",
+    "start:dev": "nodemon --experimentalSpecifierResolution=node --esm src/index.ts",
     "start:prod": "npx webpack build --mode production && node dist/bundle.cjs",
     "test": "echo \"Error: no test specified\" && exit 1"
   },

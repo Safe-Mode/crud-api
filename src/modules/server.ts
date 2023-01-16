@@ -1,18 +1,17 @@
 import { createServer, IncomingMessage, ServerResponse } from 'node:http';
 import * as dotenv from 'dotenv'
 import { v4 as uuidv4 } from 'uuid';
-import { env } from 'node:process';
 
-import type { User } from './types';
-import { ContentTypeEnum, EventEnum, HeaderEnum, MessageEnum, MethodEnum, StatusCodeEnum } from './enums';
-import { API_ENDPOINT, USER_ID_INDEX, NOT_FOUND_INDEX } from './const';
-import { endResponse, getJSONBody, isValidUserId } from './helpers';
+import type { User } from '../utils/types';
+import { ContentTypeEnum, EventEnum, HeaderEnum, MessageEnum, MethodEnum, StatusCodeEnum } from '../utils/enums';
+import { API_ENDPOINT, USER_ID_INDEX, NOT_FOUND_INDEX } from '../utils/const';
+import { endResponse, getJSONBody, isValidUserId } from '../utils/helpers';
 
 dotenv.config();
 
 const users: User[] = [];
 
-createServer((request: IncomingMessage, response: ServerResponse) => {
+export default createServer((request: IncomingMessage, response: ServerResponse) => {
     const { method, url, headers } = request;
     let result: User | User[] | string;
 
@@ -141,7 +140,4 @@ createServer((request: IncomingMessage, response: ServerResponse) => {
     } else {
         endResponse(response, StatusCodeEnum.NOT_FOUND);
     }
-})
-.listen(env['API_PORT'], () => {
-    console.log(`${MessageEnum.PORT} ${env['API_PORT']}`);
 });
