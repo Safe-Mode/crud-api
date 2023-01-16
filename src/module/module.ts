@@ -1,1 +1,0 @@
-export const GREET_MSG = 'I\'m working';

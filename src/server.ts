@@ -1,20 +1,16 @@
 import { createServer, IncomingMessage, ServerResponse } from 'node:http';
-import { v4 as uuidv4, validate } from 'uuid';
+import * as dotenv from 'dotenv'
+import { v4 as uuidv4 } from 'uuid';
+import { env } from 'node:process';
 
 import type { User } from './types';
 import { ContentTypeEnum, EventEnum, HeaderEnum, MessageEnum, MethodEnum, StatusCodeEnum } from './enums';
-import { API_PORT, API_ENDPOINT, USER_ID_INDEX, NOT_FOUND_INDEX } from './const';
+import { API_ENDPOINT, USER_ID_INDEX, NOT_FOUND_INDEX } from './const';
+import { endResponse, getJSONBody, isValidUserId } from './helpers';
+
+dotenv.config();
 
 const users: User[] = [];
-
-const endResponse = (response: ServerResponse, statusCode: StatusCodeEnum): void => {
-    response.statusCode = statusCode;
-    response.end();
-};
-
-const getJSONBody = (body: Buffer[]) => {
-    return JSON.parse(Buffer.concat(body).toString());
-};
 
 createServer((request: IncomingMessage, response: ServerResponse) => {
     const { method, url, headers } = request;
@@ -45,7 +41,7 @@ createServer((request: IncomingMessage, response: ServerResponse) => {
 
                 switch (method) {
                     case MethodEnum.GET: {
-                        if (userId && validate(userId)) {
+                        if (isValidUserId(userId)) {
                             const user = users.find((user) => (user.id === userId));
         
                             if (user) {
@@ -94,7 +90,7 @@ createServer((request: IncomingMessage, response: ServerResponse) => {
                         body.push(chunk);
                         const { username, age, hobbies }: User = getJSONBody(body);
 
-                        if (!userId || !validate(userId)) {
+                        if (!isValidUserId(userId)) {
                             result = MessageEnum.INVALID_UUID;
                             response.statusCode = StatusCodeEnum.BAD_REQUEST;
                         } else {
@@ -123,7 +119,7 @@ createServer((request: IncomingMessage, response: ServerResponse) => {
                         break;
                     }
                     case MethodEnum.DELETE: {
-                        if (!userId || !validate(userId)) {
+                        if (!isValidUserId(userId)) {
                             result = MessageEnum.INVALID_UUID;
                             response.statusCode = StatusCodeEnum.BAD_REQUEST;
                         } else {
@@ -146,6 +142,6 @@ createServer((request: IncomingMessage, response: ServerResponse) => {
         endResponse(response, StatusCodeEnum.NOT_FOUND);
     }
 })
-.listen(API_PORT, () => {
-    console.log(`${MessageEnum.PORT} ${API_PORT}`);
+.listen(env['API_PORT'], () => {
+    console.log(`${MessageEnum.PORT} ${env['API_PORT']}`);
 });
