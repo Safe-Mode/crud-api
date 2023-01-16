@@ -7,6 +7,8 @@ import { validate } from 'uuid';
 dotenv.config();
 
 const baseUrl = `${env['API_HOST']}:${env['API_PORT']}/api/`;
+let user = {};
+let userId = '';
 
 describe('Get all users', () => {
     it('should return status 200 and empty array', async () => {
@@ -20,9 +22,6 @@ describe('Get all users', () => {
 });
 
 describe('Post new user', () => {
-    let user = {};
-    let userId = '';
-
     it('should return status 201 and post new user and return it at the response', async () => {
         const { status, body } = await request(baseUrl)
             .post('users')
@@ -51,5 +50,33 @@ describe('Post new user', () => {
 
         expect(status).toBe(200);
         expect(body.body).toStrictEqual(user);
+    });
+});
+
+describe('Affect on existing user', () => {
+    const newUsername = 'Sergey Dmitriev';
+    
+    it('should update existing user and return status 200', async () => {
+        const { status, body } = await request(baseUrl)
+            .put(`users/${userId}`)
+            .send({
+                username: newUsername,
+            });
+
+        const newUser = body.body;
+
+        expect(status).toBe(200);
+        expect(newUser).toStrictEqual({
+            ...user,
+            username: newUsername
+        });
+    });
+
+    it('should delete existing user by id and return status 204', async () => {
+        const { status } = await request(baseUrl)
+            .delete(`users/${userId}`)
+            .expect((response) => response.status = 204);
+
+        expect(status).toBe(204);
     });
 });
