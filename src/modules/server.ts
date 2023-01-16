@@ -27,10 +27,6 @@ export default createServer((request: IncomingMessage, response: ServerResponse)
 
     response.setHeader(HeaderEnum.CONTENT_TYPE, ContentTypeEnum.APP_JSON);
 
-    if (headers['content-type'] !== ContentTypeEnum.APP_JSON) {
-        endResponse(response, StatusCodeEnum.BAD_REQUEST);
-    }
-
     if (url?.startsWith(API_ENDPOINT)) {
         const body: any[] = [];
         
